@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PrepOS — Internship Command Center</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root {
+  --bg: #0a0a0f;
+  --bg2: #111118;
+  --bg3: #1a1a24;
+  --border: #2a2a3a;
+  --border2: #3a3a50;
+  --text: #e8e8f0;
+  --text2: #9090a8;
+  --text3: #5a5a70;
+  --accent: #7c6aff;
+  --accent2: #a594ff;
+  --accent-glow: rgba(124,106,255,0.18);
+  --green: #3ddc84;
+  --red: #ff5a7a;
+  --orange: #ffb347;
+  --yellow: #f7e94b;
+  --cyan: #3de8dc;
+  --pink: #ff6ec7;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* TOPBAR */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 28px;background:var(--bg2);
+  border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:100;
+  backdrop-filter:blur(12px);
+}
+.logo{font-size:1.25rem;font-weight:800;letter-spacing:-0.5px;color:var(--text)}
+.logo span{color:var(--accent)}
+.topbar-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.btn{
+  font-family:'Syne',sans-serif;font-weight:600;font-size:.78rem;
+  padding:7px 14px;border-radius:var(--radius-sm);
+  border:1px solid var(--border2);background:var(--bg3);
+  color:var(--text2);cursor:pointer;transition:all .18s ease;letter-spacing:.3px;
+}
+.btn:hover{background:var(--border2);color:var(--text);border-color:var(--accent)}
+.btn-accent{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-accent:hover{background:var(--accent2);border-color:var(--accent2);color:#fff}
+.btn-danger{border-color:var(--red);color:var(--red)}
+.btn-danger:hover{background:rgba(255,90,122,.15)}
+.btn-green{border-color:var(--green);color:var(--green)}
+.btn-green:hover{background:rgba(61,220,132,.1)}
+
+/* TABS */
+.tabs-wrap{
+  display:flex;gap:4px;padding:16px 28px 0;
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  overflow-x:auto;scrollbar-width:none;
+}
+.tabs-wrap::-webkit-scrollbar{display:none}
+.tab{
+  font-family:'Syne',sans-serif;font-weight:600;font-size:.78rem;letter-spacing:.5px;
+  padding:9px 18px;border-radius:var(--radius-sm) var(--radius-sm) 0 0;
+  border:1px solid transparent;border-bottom:none;
+  background:transparent;color:var(--text3);cursor:pointer;
+  transition:all .15s ease;white-space:nowrap;
+}
+.tab:hover{color:var(--text2);background:var(--bg3)}
+.tab.active{background:var(--bg);color:var(--accent);border-color:var(--border);border-bottom-color:var(--bg)}
+
+/* MAIN */
+.main{padding:24px 28px;max-width:1400px;margin:0 auto}
+
+/* SUMMARY CARDS */
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px}
+.sum-card{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--radius);padding:20px;position:relative;overflow:hidden;
+}
+.sum-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--accent),var(--cyan));
+}
+.sum-card .label{font-size:.7rem;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
+.sum-card .value{font-size:1.9rem;font-weight:800;line-height:1}
+.sum-card .sub{font-size:.75rem;color:var(--text2);margin-top:4px}
+.sum-card.green .value{color:var(--green)}
+.sum-card.yellow .value{color:var(--yellow)}
+.sum-card.red .value{color:var(--red)}
+.sum-card.cyan .value{color:var(--cyan)}
+
+/* LAYOUT SPLIT */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
+@media(max-width:900px){.two-col{grid-template-columns:1fr}}
+
+/* CARD */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+.card-title{font-size:.7rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:16px}
+
+/* CATEGORY ROWS */
+.cat-row{margin-bottom:14px}
+.cat-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.cat-name{font-size:.85rem;font-weight:700;color:var(--text)}
+.cat-nums{font-family:'Space Mono',monospace;font-size:.72rem;color:var(--text2)}
+.cat-nums span{color:var(--accent2)}
+.progress-track{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;border-radius:3px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+
+/* CATEGORY COLORS */
+.c0{background:linear-gradient(90deg,#7c6aff,#a594ff)}
+.c1{background:linear-gradient(90deg,#3de8dc,#3ddc84)}
+.c2{background:linear-gradient(90deg,#f7e94b,#ffb347)}
+.c3{background:linear-gradient(90deg,#ff6ec7,#ff5a7a)}
+.c4{background:linear-gradient(90deg,#3ddc84,#3de8dc)}
+.c5{background:linear-gradient(90deg,#ffb347,#f7e94b)}
+.c6{background:linear-gradient(90deg,#ff5a7a,#ff6ec7)}
+.c7{background:linear-gradient(90deg,#a594ff,#7c6aff)}
+.c8{background:linear-gradient(90deg,#f97316,#fb923c)}
+
+/* ADD FORM */
+.form-grid{display:grid;grid-template-columns:1.2fr 1fr 1.8fr auto auto;gap:10px;align-items:end}
+@media(max-width:900px){.form-grid{grid-template-columns:1fr 1fr;}}
+@media(max-width:500px){.form-grid{grid-template-columns:1fr;}}
+/* Date input dark style */
+.field input[type="date"]{color-scheme:dark}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:.68rem;letter-spacing:1px;text-transform:uppercase;color:var(--text3)}
+.field select,.field input{
+  font-family:'Syne',sans-serif;font-size:.85rem;
+  background:var(--bg3);border:1px solid var(--border2);
+  color:var(--text);border-radius:var(--radius-sm);
+  padding:9px 12px;outline:none;transition:border-color .15s;
+}
+.field select:focus,.field input:focus{border-color:var(--accent)}
+.field select option{background:var(--bg3)}
+
+/* ACTIVITY LOG */
+.activity-log{max-height:320px;overflow-y:auto}
+.act-item{
+  display:grid;grid-template-columns:90px 1fr auto;gap:12px;
+  align-items:start;padding:10px 0;
+  border-bottom:1px solid var(--border);font-size:.8rem;
+}
+.act-item:last-child{border-bottom:none}
+.act-date{font-family:'Space Mono',monospace;font-size:.68rem;color:var(--text3)}
+.act-cat-badge{
+  display:inline-block;padding:2px 7px;border-radius:4px;
+  font-size:.65rem;font-weight:700;letter-spacing:.5px;margin-bottom:4px;
+}
+.act-text{color:var(--text2)}
+.act-mins{font-family:'Space Mono',monospace;font-weight:700;color:var(--accent2);white-space:nowrap;text-align:right}
+.act-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:.85rem;padding:0 4px;line-height:1}
+.act-del:hover{color:var(--red)}
+
+/* CHART */
+.chart-wrap{height:220px;position:relative}
+
+/* TRACKER TABLES */
+.tracker-table{width:100%;border-collapse:collapse;font-size:.82rem}
+.tracker-table th{
+  text-align:left;font-size:.65rem;letter-spacing:1px;text-transform:uppercase;
+  color:var(--text3);padding:8px 12px;border-bottom:1px solid var(--border);
+  font-weight:700;
+}
+.tracker-table td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:middle}
+.tracker-table tr:last-child td{border-bottom:none}
+.tracker-table tr:hover td{background:rgba(124,106,255,.05)}
+.tracker-table td:first-child{color:var(--text);font-weight:600}
+.status-badge{
+  display:inline-block;padding:3px 9px;border-radius:20px;font-size:.65rem;font-weight:700;letter-spacing:.4px;
+}
+.s-yes{background:rgba(61,220,132,.15);color:var(--green)}
+.s-no{background:rgba(90,90,112,.15);color:var(--text3)}
+.s-pending{background:rgba(247,233,75,.12);color:var(--yellow)}
+.s-pass{background:rgba(61,220,132,.15);color:var(--green)}
+.s-fail{background:rgba(255,90,122,.15);color:var(--red)}
+.s-oa{background:rgba(255,179,71,.12);color:var(--orange)}
+.s-interview{background:rgba(61,232,220,.12);color:var(--cyan)}
+
+/* TRACKER FORMS */
+.add-row-btn{
+  margin-top:14px;font-size:.75rem;
+  background:none;border:1px dashed var(--border2);
+  color:var(--text3);padding:8px 16px;border-radius:var(--radius-sm);
+  cursor:pointer;font-family:'Syne',sans-serif;transition:all .15s;width:100%;
+}
+.add-row-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-glow)}
+.inline-input{
+  font-family:'Syne',sans-serif;font-size:.82rem;background:transparent;
+  border:none;border-bottom:1px solid var(--border2);color:var(--text);
+  padding:2px 4px;outline:none;width:100%;min-width:60px;
+}
+.inline-input:focus{border-bottom-color:var(--accent)}
+.inline-select{
+  font-family:'Syne',sans-serif;font-size:.8rem;background:var(--bg3);
+  border:1px solid var(--border2);color:var(--text);
+  padding:3px 6px;border-radius:4px;outline:none;cursor:pointer;
+}
+
+/* CHECKMARK TRACKER (ML / Resume) */
+.check-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.check-item{
+  display:flex;align-items:center;gap:10px;
+  background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);
+  padding:12px 14px;cursor:pointer;transition:all .15s;
+}
+.check-item:hover{border-color:var(--accent);background:var(--accent-glow)}
+.check-item.done{border-color:var(--green);background:rgba(61,220,132,.06)}
+.check-item.done .check-label{color:var(--green)}
+.check-box{
+  width:18px;height:18px;border-radius:4px;border:2px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;
+}
+.check-item.done .check-box{background:var(--green);border-color:var(--green)}
+.check-box svg{display:none}
+.check-item.done .check-box svg{display:block}
+.check-label{font-size:.82rem;font-weight:600;color:var(--text2)}
+
+/* PRODUCT TRACKER */
+.product-section{margin-bottom:20px}
+.product-section-title{font-size:.68rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.product-items{display:flex;flex-direction:column;gap:8px}
+.product-item{
+  display:flex;align-items:center;gap:10px;
+  background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;
+}
+.product-item input[type="checkbox"]{accent-color:var(--accent);width:15px;height:15px;cursor:pointer}
+.product-item-text{flex:1;font-size:.82rem;color:var(--text2)}
+.product-item.done .product-item-text{text-decoration:line-through;color:var(--text3)}
+
+/* SECTION HEADER ROW */
+.section-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+
+/* EMPTY STATE */
+.empty{text-align:center;padding:32px;color:var(--text3);font-size:.82rem}
+.empty .icon{font-size:2rem;margin-bottom:8px;opacity:.4}
+
+/* TOAST */
+.toast{
+  position:fixed;bottom:24px;right:24px;z-index:999;
+  background:var(--bg3);border:1px solid var(--accent);border-radius:var(--radius-sm);
+  padding:12px 20px;font-size:.82rem;color:var(--text);
+  box-shadow:var(--shadow);transform:translateY(100px);opacity:0;
+  transition:all .3s cubic-bezier(.4,0,.2,1);
+}
+.toast.show{transform:translateY(0);opacity:1}
+
+/* MODAL */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;
+  display:none;align-items:center;justify-content:center;
+}
+.modal-overlay.open{display:flex}
+.modal{
+  background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);
+  padding:24px;width:90%;max-width:440px;
+}
+.modal h3{font-size:1rem;font-weight:700;margin-bottom:16px}
+.modal textarea{
+  width:100%;height:200px;background:var(--bg3);border:1px solid var(--border2);
+  color:var(--text);border-radius:var(--radius-sm);padding:12px;
+  font-family:'Space Mono',monospace;font-size:.75rem;outline:none;resize:none;
+}
+.modal-actions{display:flex;gap:10px;margin-top:14px;justify-content:flex-end}
+
+/* SCROLLTABLE */
+.scroll-x{overflow-x:auto}
+
+/* RESPONSIVE */
+@media(max-width:600px){
+  .topbar{padding:12px 16px}
+  .topbar-actions{gap:6px}
+  .main{padding:16px}
+  .tabs-wrap{padding:12px 16px 0}
+}
+
+/* GLOW PULSE on accent */
+@keyframes pulse-glow{
+  0%,100%{box-shadow:0 0 0 0 rgba(124,106,255,.4)}
+  50%{box-shadow:0 0 18px 4px rgba(124,106,255,.2)}
+}
+.btn-accent{animation:pulse-glow 3s ease infinite}
+
+/* FADE IN */
+.page{animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo">Prep<span>OS</span></div>
+  <div class="topbar-actions">
+    <button class="btn btn-green" onclick="exportData()">↓ Export</button>
+    <button class="btn" onclick="openImport()">↑ Import</button>
+    <button class="btn btn-danger" onclick="weeklyReset()">⟳ Weekly Reset</button>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs-wrap">
+  <button class="tab active" onclick="switchTab('weekly',this)">Weekly Tracker</button>
+  <button class="tab" onclick="switchTab('internship',this)">Internship Tracker</button>
+  <button class="tab" onclick="switchTab('product',this)">Product Tracker</button>
+  <button class="tab" onclick="switchTab('ml',this)">ML Tracker</button>
+  <button class="tab" onclick="switchTab('resume',this)">Resume Tracker</button>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- ===== WEEKLY TAB ===== -->
+  <div id="tab-weekly" class="page">
+    <!-- SUMMARY -->
+    <div class="summary-grid" id="summary-grid"></div>
+
+    <!-- TWO COL -->
+    <div class="two-col">
+      <!-- CATEGORIES -->
+      <div class="card">
+        <div class="card-title">Category Progress</div>
+        <div id="cat-list"></div>
+      </div>
+      <!-- CHART -->
+      <div class="card">
+        <div class="card-title">Weekly Activity (mins)</div>
+        <div class="chart-wrap"><canvas id="weekChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- ADD ACTIVITY -->
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-title">Log Activity</div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Category</label>
+          <select id="cat-sel" onchange="updateActivityHint()"></select>
+        </div>
+        <div class="field">
+          <label>Date</label>
+          <input type="date" id="act-date">
+        </div>
+        <div class="field">
+          <label>Activity</label>
+          <input type="text" id="act-text" placeholder="e.g. Linear Regression lecture">
+        </div>
+        <div class="field">
+          <label>Minutes</label>
+          <input type="number" id="act-mins" placeholder="30" min="1" max="999">
+        </div>
+        <button class="btn btn-accent" style="height:38px;align-self:end" onclick="addActivity()">+ Log</button>
+      </div>
+      <div id="act-hint" style="font-size:.72rem;color:var(--text3);margin-top:8px"></div>
+    </div>
+
+    <!-- HISTORY -->
+    <div class="card">
+      <div class="section-row">
+        <div class="card-title" style="margin-bottom:0">Activity History</div>
+        <button class="btn btn-danger" onclick="clearHistory()" style="font-size:.7rem;padding:5px 10px">Clear All</button>
+      </div>
+      <br>
+      <div class="activity-log" id="activity-log"></div>
+    </div>
+  </div>
+
+  <!-- ===== INTERNSHIP TAB ===== -->
+  <div id="tab-internship" class="page" style="display:none">
+    <div class="card">
+      <div class="card-title">Internship Applications</div>
+      <div class="scroll-x">
+        <table class="tracker-table">
+          <thead>
+            <tr>
+              <th>Company</th><th>Role</th><th>Applied</th><th>OA</th><th>Interview</th><th>Result</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="intern-tbody"></tbody>
+        </table>
+      </div>
+      <button class="add-row-btn" onclick="addInternRow()">+ Add Company</button>
+    </div>
+  </div>
+
+  <!-- ===== PRODUCT TAB ===== -->
+  <div id="tab-product" class="page" style="display:none">
+    <div class="two-col">
+      <div id="product-cases-card" class="card">
+        <div class="product-section-title">Product Cases Solved</div>
+        <div class="product-items" id="product-cases"></div>
+        <button class="add-row-btn" onclick="addProductItem('cases')">+ Add Case</button>
+      </div>
+      <div id="product-metrics-card" class="card">
+        <div class="product-section-title">Product Metrics</div>
+        <div class="product-items" id="product-metrics"></div>
+        <button class="add-row-btn" onclick="addProductItem('metrics')">+ Add Metric Topic</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="product-section-title">Product Teardowns</div>
+      <div class="product-items" id="product-teardowns"></div>
+      <button class="add-row-btn" onclick="addProductItem('teardowns')">+ Add Teardown</button>
+    </div>
+  </div>
+
+  <!-- ===== ML TAB ===== -->
+  <div id="tab-ml" class="page" style="display:none">
+    <div class="card">
+      <div class="card-title">ML Concepts Tracker</div>
+      <div class="check-grid" id="ml-check-grid"></div>
+    </div>
+  </div>
+
+  <!-- ===== RESUME TAB ===== -->
+  <div id="tab-resume" class="page" style="display:none">
+    <div class="card">
+      <div class="card-title">Resume / CV Tracker</div>
+      <div class="check-grid" id="resume-check-grid"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- IMPORT MODAL -->
+<div class="modal-overlay" id="import-modal">
+  <div class="modal">
+    <h3>Import Data (JSON)</h3>
+    <textarea id="import-text" placeholder="Paste your exported JSON here..."></textarea>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeImport()">Cancel</button>
+      <button class="btn btn-accent" onclick="importData()">Import</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ==================== DATA ====================
+const CATEGORIES = [
+  { name: 'CampusX ML',       target: 8*60,  color: 0 },
+  { name: 'Product Prep',     target: 7*60,  color: 1 },
+  { name: 'Aptitude',         target: 4*60,  color: 2 },
+  { name: 'Matiks',           target: 4*60,  color: 3 },
+  { name: 'Techniche',        target: 8*60,  color: 8 },
+  { name: 'DSA',              target: 3*60,  color: 4 },
+  { name: 'SQL',              target: 2*60,  color: 5 },
+  { name: 'Case Competitions',target: 2*60,  color: 6 },
+  { name: 'CV/Projects',      target: 2*60,  color: 7 },
+];
+const CAT_BADGE_COLORS = [
+  '#7c6aff','#3de8dc','#f7e94b','#ff6ec7','#3ddc84','#ffb347','#ff5a7a','#a594ff','#f97316'
+];
+const WEEKLY_TARGET_MINS = 40 * 60;
+const ML_CONCEPTS = ['Regression','Classification','Decision Trees','Random Forest','XGBoost','Cross Validation','Neural Networks','SVM','Clustering','PCA'];
+const RESUME_CVS = ['Product CV','DS CV','Consulting CV','Core CV'];
+
+function ls(key, def) {
+  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; }
+  catch { return def; }
+}
+function ss(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+
+function getActivities() { return ls('prp_activities', []); }
+function getInternships() { return ls('prp_internships', []); }
+function getProductItems(type) { return ls('prp_product_' + type, []); }
+function getMLStatus() { return ls('prp_ml', {}); }
+function getResumeStatus() { return ls('prp_resume', {}); }
+
+// ==================== WEEKLY TAB ====================
+let weekChart = null;
+
+function getCatMins() {
+  const activities = getActivities();
+  const mins = {};
+  CATEGORIES.forEach(c => mins[c.name] = 0);
+  activities.forEach(a => { if (mins[a.cat] !== undefined) mins[a.cat] += +a.mins; });
+  return mins;
+}
+
+function renderSummary() {
+  const mins = getCatMins();
+  const totalDone = Object.values(mins).reduce((a,b)=>a+b,0);
+  const totalTarget = WEEKLY_TARGET_MINS;
+  const remaining = Math.max(0, totalTarget - totalDone);
+  const pct = Math.min(100, Math.round(totalDone / totalTarget * 100));
+
+  document.getElementById('summary-grid').innerHTML = `
+    <div class="sum-card">
+      <div class="label">Weekly Target</div>
+      <div class="value">40<span style="font-size:.9rem;color:var(--text2)">h</span></div>
+      <div class="sub">2400 minutes</div>
+    </div>
+    <div class="sum-card green">
+      <div class="label">Completed</div>
+      <div class="value">${(totalDone/60).toFixed(1)}<span style="font-size:.9rem;color:var(--green)">h</span></div>
+      <div class="sub">${totalDone} minutes</div>
+    </div>
+    <div class="sum-card red">
+      <div class="label">Remaining</div>
+      <div class="value">${(remaining/60).toFixed(1)}<span style="font-size:.9rem;color:var(--red)">h</span></div>
+      <div class="sub">${remaining} minutes left</div>
+    </div>
+    <div class="sum-card cyan">
+      <div class="label">Progress</div>
+      <div class="value">${pct}<span style="font-size:.9rem;color:var(--cyan)">%</span></div>
+      <div class="sub">${pct >= 100 ? '🎉 Complete!' : 'Keep going!'}</div>
+    </div>
+  `;
+}
+
+function renderCategories() {
+  const mins = getCatMins();
+  const el = document.getElementById('cat-list');
+  el.innerHTML = CATEGORIES.map((c, i) => {
+    const done = mins[c.name] || 0;
+    const rem = Math.max(0, c.target - done);
+    const pct = Math.min(100, Math.round(done / c.target * 100));
+    return `
+      <div class="cat-row">
+        <div class="cat-header">
+          <span class="cat-name">${c.name}</span>
+          <span class="cat-nums"><span>${done}</span>/${c.target} min &nbsp;·&nbsp; ${rem} left</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill c${c.color}" style="width:${pct}%"></div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderChart() {
+  const activities = getActivities();
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const now = new Date();
+  const dayOfWeek = now.getDay(); // 0=Sun
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - ((dayOfWeek + 6) % 7));
+  weekStart.setHours(0,0,0,0);
+
+  const data = Array(7).fill(0);
+  activities.forEach(a => {
+    const d = new Date(a.date);
+    const diff = Math.floor((d - weekStart) / 864e5);
+    if (diff >= 0 && diff < 7) data[diff] += +a.mins;
+  });
+
+  if (weekChart) weekChart.destroy();
+  const ctx = document.getElementById('weekChart').getContext('2d');
+  weekChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: days,
+      datasets: [{
+        label: 'Minutes',
+        data,
+        backgroundColor: 'rgba(124,106,255,.5)',
+        borderColor: '#7c6aff',
+        borderWidth: 2,
+        borderRadius: 6,
+        hoverBackgroundColor: 'rgba(165,148,255,.7)',
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: '#2a2a3a' }, ticks: { color: '#9090a8', font: { family: 'Space Mono', size: 11 } } },
+        y: { grid: { color: '#2a2a3a' }, ticks: { color: '#9090a8', font: { family: 'Space Mono', size: 11 } } }
+      }
+    }
+  });
+}
+
+function renderActivityLog() {
+  const activities = getActivities();
+  const el = document.getElementById('activity-log');
+  if (!activities.length) {
+    el.innerHTML = '<div class="empty"><div class="icon">📋</div>No activities logged yet.</div>';
+    return;
+  }
+  const sorted = [...activities].reverse();
+  el.innerHTML = sorted.map((a, ri) => {
+    const i = activities.length - 1 - ri;
+    const catIdx = CATEGORIES.findIndex(c => c.name === a.cat);
+    const color = CAT_BADGE_COLORS[catIdx] || '#7c6aff';
+    const date = new Date(a.date);
+    const dateStr = date.toLocaleDateString('en-GB', {day:'2-digit',month:'short'});
+    return `
+      <div class="act-item">
+        <div class="act-date">${dateStr}</div>
+        <div>
+          <div><span class="act-cat-badge" style="background:${color}22;color:${color}">${a.cat}</span></div>
+          <div class="act-text">${escHtml(a.text)}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="act-mins">+${a.mins}m</span>
+          <button class="act-del" onclick="deleteActivity(${i})" title="Delete">✕</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function populateCatSelect() {
+  const sel = document.getElementById('cat-sel');
+  sel.innerHTML = CATEGORIES.map(c => `<option>${c.name}</option>`).join('');
+  // Default date picker to today
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth()+1).padStart(2,'0');
+  const dd = String(today.getDate()).padStart(2,'0');
+  document.getElementById('act-date').value = `${yyyy}-${mm}-${dd}`;
+}
+
+function updateActivityHint() {
+  const cat = document.getElementById('cat-sel').value;
+  const mins = getCatMins();
+  const c = CATEGORIES.find(x => x.name === cat);
+  const done = mins[cat] || 0;
+  const rem = Math.max(0, c.target - done);
+  document.getElementById('act-hint').textContent =
+    `${cat}: ${done}/${c.target} min done · ${rem} min remaining this week`;
+}
+
+function addActivity() {
+  const cat = document.getElementById('cat-sel').value;
+  const text = document.getElementById('act-text').value.trim();
+  const mins = parseInt(document.getElementById('act-mins').value);
+  const dateVal = document.getElementById('act-date').value;
+  if (!text) { toast('Add an activity description'); return; }
+  if (!mins || mins < 1) { toast('Enter valid minutes'); return; }
+  if (!dateVal) { toast('Pick a date'); return; }
+  // Build ISO date from the date picker (noon local time to avoid timezone day-shift)
+  const dateObj = new Date(dateVal + 'T12:00:00');
+  const activities = getActivities();
+  activities.push({ cat, text, mins, date: dateObj.toISOString() });
+  ss('prp_activities', activities);
+  document.getElementById('act-text').value = '';
+  document.getElementById('act-mins').value = '';
+  renderWeekly();
+  toast('Activity logged!');
+}
+
+function deleteActivity(idx) {
+  const a = getActivities();
+  a.splice(idx, 1);
+  ss('prp_activities', a);
+  renderWeekly();
+}
+
+function clearHistory() {
+  if (!confirm('Clear all activity history?')) return;
+  ss('prp_activities', []);
+  renderWeekly();
+  toast('History cleared');
+}
+
+function renderWeekly() {
+  renderSummary();
+  renderCategories();
+  renderActivityLog();
+  renderChart();
+  updateActivityHint();
+}
+
+// ==================== INTERNSHIP TAB ====================
+const INTERN_STATUSES = ['—','Applied','OA','Interview','Offer','Rejected'];
+const RESULT_STATUSES = ['—','Pending','Pass','Fail'];
+
+function renderInternship() {
+  const rows = getInternships();
+  const tbody = document.getElementById('intern-tbody');
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty"><div class="icon">🏢</div>No applications yet. Add your first!</div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = rows.map((r, i) => `
+    <tr>
+      <td><input class="inline-input" value="${escHtml(r.company)}" onchange="updateIntern(${i},'company',this.value)" placeholder="Company"></td>
+      <td><input class="inline-input" value="${escHtml(r.role)}" onchange="updateIntern(${i},'role',this.value)" placeholder="Role"></td>
+      <td>${statusBadge(r.applied, ['—','Yes'], ['s-no','s-yes'], i, 'applied')}</td>
+      <td>${statusBadge(r.oa, ['—','Pending','Pass','Fail'], ['s-no','s-pending','s-pass','s-fail'], i, 'oa')}</td>
+      <td>${statusBadge(r.interview, ['—','Pending','Pass','Fail'], ['s-no','s-pending','s-pass','s-fail'], i, 'interview')}</td>
+      <td>${statusBadge(r.result, ['—','Pending','Offer','Rejected'], ['s-no','s-pending','s-pass','s-fail'], i, 'result')}</td>
+      <td><button class="act-del" onclick="deleteIntern(${i})">✕</button></td>
+    </tr>`).join('');
+}
+
+function statusBadge(val, options, classes, rowIdx, field) {
+  const cur = val || options[0];
+  const ci = options.indexOf(cur);
+  const cls = classes[ci] || classes[0];
+  const opts = options.map((o,oi) => `<option value="${o}" ${o===cur?'selected':''}>${o}</option>`).join('');
+  return `<select class="inline-select ${cls}" onchange="updateIntern(${rowIdx},'${field}',this.value)">${opts}</select>`;
+}
+
+function addInternRow() {
+  const rows = getInternships();
+  rows.push({ company:'', role:'', applied:'—', oa:'—', interview:'—', result:'—' });
+  ss('prp_internships', rows);
+  renderInternship();
+}
+
+function updateIntern(i, field, val) {
+  const rows = getInternships();
+  rows[i][field] = val;
+  ss('prp_internships', rows);
+  renderInternship();
+}
+
+function deleteIntern(i) {
+  const rows = getInternships();
+  rows.splice(i, 1);
+  ss('prp_internships', rows);
+  renderInternship();
+  toast('Row deleted');
+}
+
+// ==================== PRODUCT TAB ====================
+function renderProduct() {
+  ['cases','metrics','teardowns'].forEach(type => {
+    const items = getProductItems(type);
+    const el = document.getElementById('product-' + type);
+    el.innerHTML = items.map((item, i) => `
+      <div class="product-item ${item.done ? 'done' : ''}">
+        <input type="checkbox" ${item.done?'checked':''} onchange="toggleProductItem('${type}',${i},this.checked)">
+        <span class="product-item-text">${escHtml(item.text)}</span>
+        <button class="act-del" onclick="deleteProductItem('${type}',${i})">✕</button>
+      </div>`).join('') || '<div class="empty" style="padding:12px;font-size:.75rem">No items yet.</div>';
+  });
+}
+
+function addProductItem(type) {
+  const text = prompt('Enter item:');
+  if (!text) return;
+  const items = getProductItems(type);
+  items.push({ text: text.trim(), done: false });
+  ss('prp_product_' + type, items);
+  renderProduct();
+}
+
+function toggleProductItem(type, i, val) {
+  const items = getProductItems(type);
+  items[i].done = val;
+  ss('prp_product_' + type, items);
+  renderProduct();
+}
+
+function deleteProductItem(type, i) {
+  const items = getProductItems(type);
+  items.splice(i, 1);
+  ss('prp_product_' + type, items);
+  renderProduct();
+}
+
+// ==================== ML TAB ====================
+function renderML() {
+  const status = getMLStatus();
+  const el = document.getElementById('ml-check-grid');
+  el.innerHTML = ML_CONCEPTS.map(c => {
+    const done = !!status[c];
+    return `
+      <div class="check-item ${done?'done':''}" onclick="toggleML('${c}')">
+        <div class="check-box">
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+            <path d="M1 4L3.5 6.5L9 1" stroke="#0a0a0f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <span class="check-label">${c}</span>
+      </div>`;
+  }).join('');
+}
+
+function toggleML(concept) {
+  const status = getMLStatus();
+  status[concept] = !status[concept];
+  ss('prp_ml', status);
+  renderML();
+}
+
+// ==================== RESUME TAB ====================
+function renderResume() {
+  const status = getResumeStatus();
+  const el = document.getElementById('resume-check-grid');
+  const items = [
+    ...RESUME_CVS,
+    'Cover Letter Template', 'Portfolio Website', 'LinkedIn Updated', 'GitHub Polished',
+  ];
+  el.innerHTML = items.map(c => {
+    const done = !!status[c];
+    return `
+      <div class="check-item ${done?'done':''}" onclick="toggleResume('${c}')">
+        <div class="check-box">
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+            <path d="M1 4L3.5 6.5L9 1" stroke="#0a0a0f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <span class="check-label">${c}</span>
+      </div>`;
+  }).join('');
+}
+
+function toggleResume(item) {
+  const status = getResumeStatus();
+  status[item] = !status[item];
+  ss('prp_resume', status);
+  renderResume();
+}
+
+// ==================== TABS ====================
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  ['weekly','internship','product','ml','resume'].forEach(t => {
+    document.getElementById('tab-' + t).style.display = t === name ? '' : 'none';
+  });
+  if (name === 'weekly') { renderWeekly(); }
+  if (name === 'internship') { renderInternship(); }
+  if (name === 'product') { renderProduct(); }
+  if (name === 'ml') { renderML(); }
+  if (name === 'resume') { renderResume(); }
+}
+
+// ==================== EXPORT / IMPORT ====================
+function exportData() {
+  const data = {
+    version: 1,
+    exported: new Date().toISOString(),
+    activities: getActivities(),
+    internships: getInternships(),
+    product_cases: getProductItems('cases'),
+    product_metrics: getProductItems('metrics'),
+    product_teardowns: getProductItems('teardowns'),
+    ml: getMLStatus(),
+    resume: getResumeStatus(),
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'prepos_backup_' + new Date().toISOString().slice(0,10) + '.json';
+  a.click(); URL.revokeObjectURL(url);
+  toast('Data exported!');
+}
+
+function openImport() {
+  document.getElementById('import-modal').classList.add('open');
+}
+function closeImport() {
+  document.getElementById('import-modal').classList.remove('open');
+  document.getElementById('import-text').value = '';
+}
+
+function importData() {
+  try {
+    const raw = document.getElementById('import-text').value;
+    const data = JSON.parse(raw);
+    if (data.activities) ss('prp_activities', data.activities);
+    if (data.internships) ss('prp_internships', data.internships);
+    if (data.product_cases) ss('prp_product_cases', data.product_cases);
+    if (data.product_metrics) ss('prp_product_metrics', data.product_metrics);
+    if (data.product_teardowns) ss('prp_product_teardowns', data.product_teardowns);
+    if (data.ml) ss('prp_ml', data.ml);
+    if (data.resume) ss('prp_resume', data.resume);
+    closeImport();
+    renderWeekly();
+    toast('Data imported successfully!');
+  } catch(e) {
+    toast('Invalid JSON. Please check the format.');
+  }
+}
+
+// ==================== RESET ====================
+function weeklyReset() {
+  if (!confirm('Reset all weekly activity data? This cannot be undone.')) return;
+  ss('prp_activities', []);
+  renderWeekly();
+  toast('Weekly data reset!');
+}
+
+// ==================== UTILS ====================
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+// ==================== SEED EXISTING DATA ====================
+(function seedIfEmpty() {
+  if (localStorage.getItem('prp_seeded')) return; // already seeded
+  const seed = {"version":1,"exported":"2026-06-09T08:03:45.211Z","activities":[{"cat":"CampusX ML","text":"Day 15","mins":36,"date":"2026-06-07T03:41:21.262Z"},{"cat":"CampusX ML","text":"Day 16,17,18","mins":74,"date":"2026-06-08T12:05:42.541Z"},{"cat":"CV/Projects","text":"added freshers' portal, hackstack","mins":60,"date":"2026-06-08T12:06:58.496Z"},{"cat":"Matiks","text":"maths 1100 cross","mins":30,"date":"2026-06-08T18:09:59.378Z"},{"cat":"Product Prep","text":"What is PM","mins":30,"date":"2026-06-08T18:18:39.614Z"},{"cat":"Aptitude","text":"Percentage Inc/Dec + Ratio-> Percentage","mins":68,"date":"2026-06-09T08:02:25.802Z"}],"internships":[],"product_cases":[],"product_metrics":[],"product_teardowns":[],"ml":{},"resume":{}};
+  if (!localStorage.getItem('prp_activities')) ss('prp_activities', seed.activities);
+  if (!localStorage.getItem('prp_internships')) ss('prp_internships', seed.internships);
+  if (!localStorage.getItem('prp_product_cases')) ss('prp_product_cases', seed.product_cases);
+  if (!localStorage.getItem('prp_product_metrics')) ss('prp_product_metrics', seed.product_metrics);
+  if (!localStorage.getItem('prp_product_teardowns')) ss('prp_product_teardowns', seed.product_teardowns);
+  if (!localStorage.getItem('prp_ml')) ss('prp_ml', seed.ml);
+  if (!localStorage.getItem('prp_resume')) ss('prp_resume', seed.resume);
+  localStorage.setItem('prp_seeded', '1');
+})();
+
+// ==================== INIT ====================
+populateCatSelect();
+renderWeekly();
+</script>
+</body>
+</html>
